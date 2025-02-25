@@ -455,14 +455,14 @@ class E2E_Model(Model):
             if self._training:
                 losses = self._receiver([y, active_dmrs, b, h, mcs_ue_mask],
                                         mcs_arr_eval)
-                return losses
+                return losses, y
             else:
                 # in inference mode, the neural receiver returns:
                 # - reconstructed payload bits b_hat
                 # - refined channel estimate h_hat_refined
                 # - initial channel estimate h_hat
                 # - [optional] transport block CRC status
-                b_hat, h_hat_refined, h_hat, tb_crc_status = \
+                b_hat, h_hat_refined, h_hat, tb_crc_status, s = \
                                 self._receiver((y, active_dmrs),
                                                 mcs_arr_eval,
                                                 mcs_ue_mask_eval=mcs_ue_mask)
@@ -504,9 +504,9 @@ class E2E_Model(Model):
                         return b, b_hat, tb_crc_status
                 else:
                     if output_nrx_h_hat:
-                        return b, b_hat, h, h_hat_refined, h_hat
+                        return b, b_hat, h, h_hat_refined, h_hat, y, s
                     else:
-                        return b, b_hat
+                        return b, b_hat, y, s
         else:
             raise ValueError("Unknown system selected!")
 

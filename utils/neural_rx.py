@@ -19,7 +19,7 @@ from sionna.utils import flatten_dims, split_dim, flatten_last_dims, insert_dims
 from sionna.ofdm import ResourceGridDemapper
 from sionna.nr import TBDecoder, LayerDemapper, PUSCHLSChannelEstimator
 
-class StateInit(Layer):
+class StateInit(Model):
     # pylint: disable=line-too-long
     r"""
     Network initializing the state tensor for each user.
@@ -1327,12 +1327,12 @@ class CGNNOFDM(Model):
             loss_chest = tf.multiply(loss_chest, active_tx_chest)
             # Average over batch, transmitters, and resource grid
             loss_chest = tf.reduce_mean(loss_chest)
-            return loss_data, loss_chest
+            return loss_data, loss_chest, y
         else:
             # Only return the last iteration during inference
-            return llrs[-1][0], h_hats[-1]
+            return llrs[-1][0], h_hats[-1], y
 
-class NeuralPUSCHReceiver(Layer):
+class NeuralPUSCHReceiver(Model):
     # pylint: disable=line-too-long
     r"""
     Neural PUSCH Receiver extending the CGNNOFDM Layer with 5G NR capabilities.
@@ -1596,7 +1596,7 @@ class NeuralPUSCHReceiver(Layer):
             num_tx = tf.shape(active_tx)[1]
             h_hat = self.estimate_channel(y, num_tx)
 
-            llr, h_hat_refined = self._neural_rx(
+            llr, h_hat_refined, s = self._neural_rx(
                                             (y, h_hat, active_tx),
                                             [mcs_arr_eval[0]],
                                             mcs_ue_mask_eval=mcs_ue_mask_eval)
@@ -1604,7 +1604,7 @@ class NeuralPUSCHReceiver(Layer):
             # apply TBDecoding
             b_hat, tb_crc_status = self._tb_decoders[mcs_arr_eval[0]](llr)
 
-            return b_hat, h_hat_refined, h_hat, tb_crc_status
+            return b_hat, h_hat_refined, h_hat, tb_crc_status, s
 
 
 ################################
